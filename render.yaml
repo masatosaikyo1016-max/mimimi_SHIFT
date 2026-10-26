@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: shift-manager-hoahoa-guu
+    env: node
+    plan: free
+    buildCommand: echo "No build step required"
+    startCommand: node server.js
+    envVars:
+      - key: ACCESS_KEY
+        value: hhgt_8x9k2m4p7w3q

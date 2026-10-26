@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow, noarchive" />
+  <title>シフト調整・管理アプリ | Hoa Hoa / guu table / GALLERY</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-top-row">
+          <span class="brand-badge">SHIFT MANAGER</span>
+          <span id="syncStatusBadge" class="sync-status-badge">🔒 専用URL限定</span>
+        </div>
+        <h1>シフト調整・自動編成アプリ</h1>
+        <p class="subtitle">営業時間：<strong>Hoa Hoa</strong> / <strong>guu table</strong>（10:00〜23:00）｜ <strong>GALLERY</strong>（10:00〜19:00）</p>
+      </div>
+      <div class="header-controls">
+        <div class="month-selector">
+          <button id="prevMonthBtn" class="btn btn-outline" title="前月">◀</button>
+          <input type="month" id="targetMonthInput" />
+          <button id="nextMonthBtn" class="btn btn-outline" title="翌月">▶</button>
+        </div>
+        <button id="copyShareUrlBtn" class="btn btn-primary" title="URLを知っている人のみ開ける専用リンクをコピーします">🔗 LINE共有URLをコピー</button>
+        <button id="printBtn" class="btn btn-outline">印刷</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- ルール・ステータスバー -->
+    <section class="info-banner">
+      <div class="shop-pills">
+        <span class="shop-pill shop-hoahoa">Hoa Hoa（10:00-23:00 L.O 21:00）</span>
+        <span class="shop-pill shop-guu">guu table（10:00-23:00 L.O 21:30）</span>
+        <span class="shop-pill shop-gallery">GALLERY（10:00-19:00 ※塩沢・内山・岡村・大塚のみ）</span>
+      </div>
+      <div class="info-note">
+        💡 <strong>同日2枠（ヘルプ出勤）対応：</strong>時間が重ならなければ1日に2つまで指定可能です（例：GALLERY→Hoa Hoa）。
+      </div>
+    </section>
+
+    <div class="main-grid">
+      <!-- 左カラム：シフト希望入力パネル -->
+      <aside class="panel input-panel">
+        <div class="panel-header">
+          <h2>1. スタッフ希望シフト入力</h2>
+          <p>名前と希望時間を入力（同日2枠のヘルプ出勤指定も可）</p>
+        </div>
+
+        <form id="shiftRequestForm" class="shift-form">
+          <div class="form-group">
+            <label for="staffNameInput">スタッフ名 <span class="required">必須</span></label>
+            <div class="name-input-row">
+              <input
+                type="text"
+                id="staffNameInput"
+                list="staffPresetList"
+                placeholder="スタッフ名を入力"
+                required
+              />
+              <datalist id="staffPresetList">
+                <option value="岡村">GALLERY可・遅番22時対応可</option>
+                <option value="塩沢">GALLERY可・遅番22時対応可</option>
+                <option value="内山">GALLERY可・遅番22時対応可</option>
+                <option value="大塚">GALLERY可</option>
+              </datalist>
+            </div>
+            <div id="galleryEligibilityBadge" class="eligibility-badge hidden"></div>
+            <div class="quick-name-chips">
+              <span class="chip-label">クイック選択：</span>
+              <button type="button" class="name-chip gallery-member" data-name="岡村">岡村</button>
+              <button type="button" class="name-chip gallery-member" data-name="塩沢">塩沢</button>
+              <button type="button" class="name-chip gallery-member" data-name="内山">内山</button>
+              <button type="button" class="name-chip gallery-member" data-name="大塚">大塚</button>
+            </div>
+          </div>
+
+          <!-- 入力モード切替：単日 or 複数日一括 -->
+          <div class="form-group">
+            <label>日付の選択方法</label>
+            <div class="mode-tabs">
+              <button type="button" class="mode-tab active" data-mode="single">単日指定</button>
+              <button type="button" class="mode-tab" data-mode="multi">複数日・曜日一括</button>
+            </div>
+          </div>
+
+          <!-- 単日指定 -->
+          <div id="singleDateBox" class="form-group">
+            <label for="shiftDateInput">希望日</label>
+            <input type="date" id="shiftDateInput" required />
+          </div>
+
+          <!-- 複数日指定 -->
+          <div id="multiDateBox" class="form-group hidden">
+            <label>対象月の日付を選択（曜日一括選択も可能）</label>
+            <div class="weekday-Select-bar">
+              <button type="button" class="btn-xs" data-weekday="all">全選択</button>
+              <button type="button" class="btn-xs" data-weekday=" weekdays">平日</button>
+              <button type="button" class="btn-xs" data-weekday="weekends">土日</button>
+              <button type="button" class="btn-xs" data-weekday="clear">解除</button>
+            </div>
+            <div id="multiDateGrid" class="multi-date-grid"></div>
+
+            <!-- 選択した日にちごとの個別時間変更エリア -->
+            <div id="multiDateTimeSection" class="multi-date-time-section hidden">
+              <div class="multi-time-header">
+                <span>選択した日にちごとの時間設定（個別変更可）</span>
+                <button type="button" id="applyBaseTimeToAllBtn" class="btn-xs">基本時間で揃える</button>
+              </div>
+              <div id="multiDateTimeList" class="multi-date-time-list"></div>
+            </div>
+          </div>
+
+          <!-- 1枠目 -->
+          <div class="shift-slot-box">
+            <div class="slot-box-title">第1シフト（メイン希望時間）</div>
+            <div class="form-row-2col">
+              <div class="form-group">
+                <label for="startTimeSelect">開始時間</label>
+                <select id="startTimeSelect"></select>
+              </div>
+              <div class="form-group">
+                <label for="endTimeSelect">終了時間</label>
+                <select id="endTimeSelect"></select>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top:6px;">
+              <label for="preferredShopSelect">配属先（自動または指定）</label>
+              <select id="preferredShopSelect">
+                <option value="AUTO">✨ 自動割り当て（人数バランス・遅番不足考慮）</option>
+                <option value="Hoa Hoa">Hoa Hoa（10:00-23:00）</option>
+                <option value="guu table">guu table（10:00-23:00）</option>
+                <option value="GALLERY" id="galleryOption">GALLERY（10:00-19:00 ※塩沢・内山・岡村・大塚のみ）</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 2枠目オプション -->
+          <div class="second-shift-toggle-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="enableSecondShiftCheck" />
+              <span>同日に2つ目のシフト</span>
+            </label>
+          </div>
+
+          <div id="secondShiftBox" class="shift-slot-box second-slot hidden">
+            <div class="slot-box-title">第2シフト（ヘルプ出勤・時間が重ならない枠）</div>
+            <div class="form-row-2col">
+              <div class="form-group">
+                <label for="startTimeSelect2">開始時間（2枠目）</label>
+                <select id="startTimeSelect2"></select>
+              </div>
+              <div class="form-group">
+                <label for="endTimeSelect2">終了時間（2枠目）</label>
+                <select id="endTimeSelect2"></select>
+              </div>
+            </div>
+            <div class="form-group" style="margin-top:6px;">
+              <label for="preferredShopSelect2">2枠目の配属先</label>
+              <select id="preferredShopSelect2">
+                <option value="Hoa Hoa">Hoa Hoa（10:00-23:00）</option>
+                <option value="guu table">guu table（10:00-23:00）</option>
+                <option value="GALLERY" id="galleryOption2">GALLERY（10:00-19:00 ※塩沢・内山・岡村・大塚のみ）</option>
+                <option value="AUTO">✨ 自動割り当て</option>
+              </select>
+            </div>
+          </div>
+
+          <small id="shopHelpText" class="help-text">
+            ※同じ日に別々の時間帯で2回に分けて登録しても、時間が重なっていなければ2つまで自動追加されます。
+          </small>
+
+          <button type="submit" class="btn btn-primary btn-block">
+            ＋ シフト希望を登録して表に反映
+          </button>
+        </form>
+
+        <hr class="divider" />
+
+        <div class="panel-Subheader">
+          <h3>登録スタッフ一覧 & 月間集計</h3>
+          <button id="clearAllDataBtn" class="btn-text-danger">全データ初期化</button>
+        </div>
+        <div id="staffSummaryList" class="staff-summary-list"></div>
+      </aside>
+
+      <!-- 右カラム：カレンダー＆シフト表エリア -->
+      <section class="panel calendar-panel">
+        <div class="calendar-toolbar">
+          <div class="view-tabs">
+            <button class="view-tab active" data-view="calendar">📅 月間カレンダー表</button>
+            <button class="view-tab" data-view="matrix">📊 スタッフ×日付 早見表（マトリクス）</button>
+            <button class="view-tab" data-view="daily">🕐 日別タイムライン（10:00-23:00）</button>
+          </div>
+
+          <div class="filter-bar">
+            <label for="shopFilterSelect">表示フィルタ：</label>
+            <select id="shopFilterSelect">
+              <option value="ALL">すべて表示（Hoa Hoa / guu table / GALLERY）</option>
+              <option value="Hoa Hoa">Hoa Hoa のみ（10:00-23:00）</option>
+              <option value="guu table">guu table のみ（10:00-23:00）</option>
+              <option value="GALLERY">GALLERY のみ（10:00-19:00）</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ビュー1：月間カレンダー形式 -->
+        <div id="calendarView" class="view-section">
+          <div class="mobile-calendar-mode-bar">
+            <span class="mobile-mode-label">スマホ表示切替：</span>
+            <button type="button" class="mobile-cal-btn active" data-cal-mode="list">📱 縦リスト（見やすい）</button>
+            <button type="button" class="mobile-cal-btn" data-cal-mode="grid">📅 7列カレンダー</button>
+          </div>
+          <div id="calendarScrollWrapper" class="calendar-scroll-wrapper mobile-list-mode">
+            <div class="calendar-weekdays">
+              <div class="sun">日</div>
+              <div>月</div>
+              <div>火</div>
+              <div>水</div>
+              <div>木</div>
+              <div>金</div>
+              <div class="sat">土</div>
+            </div>
+            <div id="calendarGrid" class="calendar-grid"></div>
+          </div>
+        </div>
+
+        <!-- ビュー2：スタッフ×日付マトリクス表 -->
+        <div id="matrixView" class="view-section hidden">
+          <div class="matrix-scroll-wrapper">
+            <table id="matrixTable" class="matrix-table"></table>
+          </div>
+        </div>
+
+        <!-- ビュー3：日別タイムライン（10:00〜23:00） -->
+        <div id="dailyView" class="view-section hidden">
+          <div class="daily-header-bar">
+            <label for="dailyDateSelect">表示する日付：</label>
+            <input type="date" id="dailyDateSelect" />
+            <span id="dailyStatsText" class="daily-stats"></span>
+          </div>
+          <div id="dailyTimelineContainer" class="daily-timeline-container"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- シフト個別編集モーダル -->
+  <div id="editModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modalTitle">シフト詳細・編集</h3>
+        <button id="closeModalBtn" class="modal-close">×</button>
+      </div>
+      <form id="editShiftForm">
+        <input type="hidden" id="editShiftId" />
+        <div class="form-group">
+          <label>日付</label>
+          <input type="date" id="editDateInput" required />
+        </div>
+        <div class="form-group">
+          <label>スタッフ名</label>
+          <input type="text" id="editNameInput" required />
+        </div>
+        <div class="form-row-2col">
+          <div class="form-group">
+            <label>開始時間</label>
+            <select id="editStartSelect"></select>
+          </div>
+          <div class="form-group">
+            <label>終了時間</label>
+            <select id="editEndSelect"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>配属先（店舗・部門）</label>
+          <select id="editShopSelect">
+            <option value="Hoa Hoa">Hoa Hoa（10:00-23:00）</option>
+            <option value="guu table">guu table（10:00-23:00）</option>
+            <option value="GALLERY">GALLERY（10:00-19:00 ※塩沢・内山・岡村・大塚のみ）</option>
+          </select>
+          <p id="editModalWarning" class="warning-text hidden"></p>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="deleteShiftBtn" class="btn btn-danger">削除</button>
+          <div class="modal-actions-right">
+            <button type="button" id="cancelModalBtn" class="btn btn-outline">キャンセル</button>
+            <button type="submit" class="btn btn-primary">変更を保存</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 専用URLアクセス制限ゲート（URLトークンがない場合に表示） -->
+  <div id="accessGateOverlay" class="access-gate-overlay hidden">
+    <div class="access-gate-card">
+      <div class="access-gate-icon">🔒</div>
+      <h2>専用URL限定ページ</h2>
+      <p>
+        このシフト管理ページは、<strong>LINE等で共有された専用URLを知っているスタッフのみ</strong>アクセスできます。<br />
+        共有されたリンク（<code>?key=...</code> 付きURL）から再度開いてください。
+      </p>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

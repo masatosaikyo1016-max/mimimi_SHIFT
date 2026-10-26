@@ -1,0 +1,38 @@
+{
+  "shifts": [
+    {
+      "id": "shift_1792997049439_djy1f3",
+      "date": "2026-11-01",
+      "name": "小林",
+      "start": "10:00",
+      "end": "15:00",
+      "requestedEnd": "15:00",
+      "shop": "Hoa Hoa",
+      "requestedShop": "AUTO",
+      "isLateSupport": false
+    },
+    {
+      "id": "shift_1792997082973_4fx4bl",
+      "date": "2026-11-01",
+      "name": "内山",
+      "start": "10:00",
+      "end": "19:00",
+      "requestedEnd": "19:00",
+      "shop": "GALLERY",
+      "requestedShop": "AUTO",
+      "isLateSupport": false
+    },
+    {
+      "id": "shift_1792997082973_mcknpq",
+      "date": "2026-11-01",
+      "name": "内山",
+      "start": "19:00",
+      "end": "22:00",
+      "requestedEnd": "22:00",
+      "shop": "Hoa Hoa",
+      "requestedShop": "Hoa Hoa",
+      "isLateSupport": false
+    }
+  ],
+  "updatedAt": "2026-10-26T07:16:31.613Z"
+}
